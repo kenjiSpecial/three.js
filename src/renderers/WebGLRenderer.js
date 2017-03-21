@@ -31,11 +31,13 @@ import { WebGLCapabilities } from './webgl/WebGLCapabilities';
 import { BufferGeometry } from '../core/BufferGeometry';
 import { WebGLExtensions } from './webgl/WebGLExtensions';
 import { Vector3 } from '../math/Vector3';
+import {WebGLMultisampleRenderTarget } from './WebGLMultisampleRenderTarget';
 // import { Sphere } from '../math/Sphere';
 import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
+
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -267,6 +269,7 @@ function WebGLRenderer( parameters ) {
 
 	}
 
+    var _isWebGL2 = (typeof WebGL2RenderingContext !== 'undefined' && _gl instanceof WebGL2RenderingContext);
 	var extensions = new WebGLExtensions( _gl );
 
 	extensions.get( 'WEBGL_depth_texture' );
@@ -288,7 +291,7 @@ function WebGLRenderer( parameters ) {
 	var state = new WebGLState( _gl, extensions, paramThreeToGL );
 
 	var properties = new WebGLProperties();
-	var textures = new WebGLTextures( _gl, extensions, state, properties, capabilities, paramThreeToGL, _infoMemory );
+	var textures = new WebGLTextures( _gl, extensions, state, properties, capabilities, paramThreeToGL, _infoMemory, _isWebGL2 );
 	var attributes = new WebGLAttributes( _gl );
 	var geometries = new WebGLGeometries( _gl, attributes, _infoMemory );
 	var objects = new WebGLObjects( _gl, geometries, _infoRender );
@@ -2384,8 +2387,8 @@ function WebGLRenderer( parameters ) {
 				_matrix4.premultiply( viewMatrix );
 				_matrix42.extractRotation( _matrix4 );
 
-				uniforms.halfWidth.set( light.width * 0.5,                0.0, 0.0 );
-				uniforms.halfHeight.set(              0.0, light.height * 0.5, 0.0 );
+				uniforms.halfWidth.set( light.width * 0.5, 0.0, 0.0 );
+				uniforms.halfHeight.set( 0.0, light.height * 0.5, 0.0 );
 
 				uniforms.halfWidth.applyMatrix4( _matrix42 );
 				uniforms.halfHeight.applyMatrix4( _matrix42 );
@@ -2594,6 +2597,14 @@ function WebGLRenderer( parameters ) {
 
 	};
 
+	function getRenderTargetSamples( renderTarget ) {
+
+		return ( _isWebGL2 && renderTarget instanceof WebGLMultisampleRenderTarget )
+            ? Math.min( capabilities.maxSamples, renderTarget.samples )
+            : 0;
+
+	}
+
 	this.setRenderTarget = function ( renderTarget ) {
 
 		_currentRenderTarget = renderTarget;
@@ -2605,13 +2616,18 @@ function WebGLRenderer( parameters ) {
 		}
 
 		var isCube = ( renderTarget && renderTarget.isWebGLRenderTargetCube );
+		var msaaSamples = getRenderTargetSamples( renderTarget );
 		var framebuffer;
 
 		if ( renderTarget ) {
 
 			var renderTargetProperties = properties.get( renderTarget );
 
-			if ( isCube ) {
+			if ( msaaSamples ) {
+
+				framebuffer = renderTargetProperties.__webglMSAAFramebuffer;
+
+			} else if ( isCube ) {
 
 				framebuffer = renderTargetProperties.__webglFramebuffer[ renderTarget.activeCubeFace ];
 

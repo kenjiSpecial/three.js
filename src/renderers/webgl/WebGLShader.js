@@ -19,6 +19,7 @@ function addLineNumbers( string ) {
 function WebGLShader( gl, type, string ) {
 
 	var shader = gl.createShader( type );
+	string = string.trim();
 
 	gl.shaderSource( shader, string );
 	gl.compileShader( shader );

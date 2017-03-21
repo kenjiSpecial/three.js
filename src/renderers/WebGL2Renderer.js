@@ -82,6 +82,7 @@ function WebGL2Renderer( parameters ) {
 
 		_viewport = new Vector4( 0, 0, _width, _height );
 
+
 	var extensions = new WebGLExtensions( gl );
 	var state = new WebGLState( gl, extensions, function () {} );
 

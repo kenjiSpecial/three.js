@@ -81,6 +81,7 @@ function WebGLCapabilities( gl, extensions, parameters ) {
 	var vertexTextures = maxVertexTextures > 0;
 	var floatFragmentTextures = !! extensions.get( 'OES_texture_float' );
 	var floatVertexTextures = vertexTextures && floatFragmentTextures;
+    var maxSamples = gl.MAX_SAMPLES ? gl.getParameter( gl.MAX_SAMPLES ) : 0;
 
 	return {
 
@@ -102,8 +103,9 @@ function WebGLCapabilities( gl, extensions, parameters ) {
 
 		vertexTextures: vertexTextures,
 		floatFragmentTextures: floatFragmentTextures,
-		floatVertexTextures: floatVertexTextures
+		floatVertexTextures: floatVertexTextures,
 
+        maxSamples : maxSamples
 	};
 
 }
