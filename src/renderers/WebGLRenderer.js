@@ -279,7 +279,7 @@ function WebGLRenderer( parameters ) {
 	extensions.get( 'OES_texture_half_float_linear' );
 	extensions.get( 'OES_standard_derivatives' );
 	extensions.get( 'ANGLE_instanced_arrays' );
-	
+
     var DrawBuffersEXT = extensions.get( 'WEBGL_draw_buffers' );
 
 	if ( extensions.get( 'OES_element_index_uint' ) ) {
@@ -305,7 +305,9 @@ function WebGLRenderer( parameters ) {
 
 	var bufferRenderer = new WebGLBufferRenderer( _gl, extensions, _infoRender );
 	var indexedBufferRenderer = new WebGLIndexedBufferRenderer( _gl, extensions, _infoRender );
-
+    var defaultAttachments = [ _gl.COLOR_ATTACHMENT0 ];
+    var defaultBackAttachment = [ _gl.BACK ];
+    
 	//
 
 	var backgroundPlaneCamera, backgroundPlaneMesh;
