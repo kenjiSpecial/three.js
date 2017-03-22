@@ -818,11 +818,32 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, paramT
 
 		} else {
 
-			state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
-			setTextureParameters( _gl.TEXTURE_2D, renderTarget.texture, isTargetPowerOfTwo );
-			setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, _gl.COLOR_ATTACHMENT0, _gl.TEXTURE_2D, internalFormat );
+            if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-			if ( renderTarget.texture.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+                for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+                    var attachment = renderTarget.attachments[ i ];
+                    var attachmentProperties = properties.get( attachment );
+                    state.bindTexture( _gl.TEXTURE_2D, attachmentProperties.__webglTexture );
+                    setTextureParameters( _gl.TEXTURE_2D, attachment, isTargetPowerOfTwo );
+                    setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer,
+                        renderTarget.width,
+                        renderTarget.height,
+                        attachment,
+                        _gl.COLOR_ATTACHMENT0 + i,
+                        _gl.TEXTURE_2D );
+
+                    if ( attachment.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+
+                }
+
+            } else {
+				state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
+				setTextureParameters( _gl.TEXTURE_2D, renderTarget.texture, isTargetPowerOfTwo );
+				setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, _gl.COLOR_ATTACHMENT0, _gl.TEXTURE_2D, internalFormat );
+
+				if ( renderTarget.texture.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+        	}
 			state.bindTexture( _gl.TEXTURE_2D, null );
 
 		}
