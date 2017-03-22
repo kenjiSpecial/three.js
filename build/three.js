@@ -17848,6 +17848,8 @@
 
 			}
 
+
+
 			if ( renderTarget.isWebGLRenderTargetCube ) {
 
 				for ( var i = 0; i < 6; i ++ ) {
@@ -18403,9 +18405,28 @@
 
 			renderTarget.addEventListener( 'dispose', onRenderTargetDispose );
 
-			textureProperties.__webglTexture = _gl.createTexture();
+	        if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-			infoMemory.textures ++;
+	            renderTargetProperties.__webglAttachmentTextures = [ ];
+	            renderTargetProperties.__webglAttachments = [ ];
+
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                var attachmentProperties = properties.get( renderTarget.attachments[ i ] );
+	                attachmentProperties.__webglTexture = _gl.createTexture();
+	                renderTargetProperties.__webglAttachments[ i ] = _gl.COLOR_ATTACHMENT0 + i;
+
+	                _infoMemory.textures ++;
+
+	            }
+
+	        } else {
+
+	            textureProperties.__webglTexture = _gl.createTexture();
+
+	            _infoMemory.textures ++;
+
+	        }
 
 			var isCube = ( renderTarget.isWebGLRenderTargetCube === true );
 			var isTargetPowerOfTwo = isPowerOfTwo( renderTarget );
