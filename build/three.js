@@ -18403,9 +18403,28 @@
 
 			renderTarget.addEventListener( 'dispose', onRenderTargetDispose );
 
-			textureProperties.__webglTexture = _gl.createTexture();
+	        if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-			infoMemory.textures ++;
+	            renderTargetProperties.__webglAttachmentTextures = [ ];
+	            renderTargetProperties.__webglAttachments = [ ];
+
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                var attachmentProperties = properties.get( renderTarget.attachments[ i ] );
+	                attachmentProperties.__webglTexture = _gl.createTexture();
+	                renderTargetProperties.__webglAttachments[ i ] = _gl.COLOR_ATTACHMENT0 + i;
+
+	                infoMemory.textures ++;
+
+	            }
+
+	        } else {
+
+	            textureProperties.__webglTexture = _gl.createTexture();
+
+	            infoMemory.textures ++;
+
+	        }
 
 			var isCube = ( renderTarget.isWebGLRenderTargetCube === true );
 			var isTargetPowerOfTwo = isPowerOfTwo( renderTarget );
