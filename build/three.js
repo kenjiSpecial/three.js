@@ -17848,6 +17848,17 @@
 
 			}
 
+	        if ( renderTarget && renderTarget.isWebGLMultiRenderTarget && renderTargetProperties.__webglAttachments ) {
+
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                var attachmentProperties = properties.get( renderTarget.attachments[ i ] );
+	                _gl.deleteTexture( attachmentProperties.__webglTexture );
+
+	            }
+
+	        }
+
 			if ( renderTarget.isWebGLRenderTargetCube ) {
 
 				for ( var i = 0; i < 6; i ++ ) {
@@ -18403,9 +18414,29 @@
 
 			renderTarget.addEventListener( 'dispose', onRenderTargetDispose );
 
-			textureProperties.__webglTexture = _gl.createTexture();
+	        if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-			infoMemory.textures ++;
+	            renderTargetProperties.__webglAttachmentTextures = [ ];
+	            renderTargetProperties.__webglAttachments = [ ];
+
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                var attachmentProperties = properties.get( renderTarget.attachments[ i ] );
+	                attachmentProperties.__webglTexture = _gl.createTexture();
+	                renderTargetProperties.__webglAttachments[ i ] = _gl.COLOR_ATTACHMENT0 + i;
+
+	                _infoMemory.textures ++;
+
+	            }
+
+	        } else {
+
+	            textureProperties.__webglTexture = _gl.createTexture();
+
+	            _infoMemory.textures ++;
+
+	        }
+
 
 			var isCube = ( renderTarget.isWebGLRenderTargetCube === true );
 			var isTargetPowerOfTwo = isPowerOfTwo( renderTarget );
@@ -18488,12 +18519,36 @@
 
 			} else {
 
-				state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
-				setTextureParameters( _gl.TEXTURE_2D, renderTarget.texture, isTargetPowerOfTwo );
-				setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, _gl.COLOR_ATTACHMENT0, _gl.TEXTURE_2D, internalFormat );
+	            if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-				if ( renderTarget.texture.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
-				state.bindTexture( _gl.TEXTURE_2D, null );
+	                for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                    var attachment = renderTarget.attachments[ i ];
+	                    var attachmentProperties = properties.get( attachment );
+	                    state.bindTexture( _gl.TEXTURE_2D, attachmentProperties.__webglTexture );
+	                    setTextureParameters( _gl.TEXTURE_2D, attachment, isTargetPowerOfTwo );
+	                    setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer,
+	                        renderTarget.width,
+	                        renderTarget.height,
+	                        attachment,
+	                        _gl.COLOR_ATTACHMENT0 + i,
+	                        _gl.TEXTURE_2D );
+
+	                    if ( attachment.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+
+	                }
+
+	            } else {
+
+	                state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
+	                setTextureParameters( _gl.TEXTURE_2D, renderTarget.texture, isTargetPowerOfTwo );
+	                setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget.width, renderTarget.height, renderTarget.texture, _gl.COLOR_ATTACHMENT0, _gl.TEXTURE_2D );
+
+	                if ( renderTarget.texture.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+
+	            }
+
+	            state.bindTexture( _gl.TEXTURE_2D, null );
 
 			}
 
@@ -18519,34 +18574,54 @@
 
 			var texture = renderTarget.texture;
 
-			if ( texture.generateMipmaps && isPowerOfTwo( renderTarget ) &&
-					texture.minFilter !== NearestFilter &&
-					texture.minFilter !== LinearFilter ) {
+	        if ( renderTarget.isWebGLMultiRenderTarget ) {
 
-				var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
-				var webglTexture = properties.get( texture ).__webglTexture;
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
 
-				state.bindTexture( target, webglTexture );
-				_gl.generateMipmap( target );
-				state.bindTexture( target, null );
+	                texture = properties.get( renderTarget.attachments[ i ] ).__webglTexture;
 
-			}
+	                if ( texture.generateMipmaps && isPowerOfTwo( renderTarget )
+						&& texture.minFilter !== NearestFilter
+						&&  texture.minFilter !== LinearFilter ) {
+	                    var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
+	                    state.bindTexture( target, texture );
+	                    _gl.generateMipmap( target );
 
-	        var msaaSamples = getRenderTargetSamples( renderTarget );
+	                }
 
-	        if ( msaaSamples ) {
+	            }
 
-	            var renderTargetProperties = properties.get( renderTarget );
-	            _gl.bindFramebuffer( _gl.READ_FRAMEBUFFER, renderTargetProperties.__webglMSAAFramebuffer );
-	            _gl.bindFramebuffer( _gl.DRAW_FRAMEBUFFER, renderTargetProperties.__webglFramebuffer );
+	        } else{
 
-	            var width = renderTarget.width;
-	            var height = renderTarget.height;
-	            var mask = _gl.COLOR_BUFFER_BIT;
-	            if ( renderTarget.depthBuffer ) mask |= _gl.DEPTH_BUFFER_BIT;
-	            if ( renderTarget.stencilBuffer ) mask |= _gl.STENCIL_BUFFER_BIT;
-	            _gl.blitFramebuffer( 0, 0, width, height, 0, 0, width, height, mask, _gl.NEAREST );
+	            if(texture.generateMipmaps && isPowerOfTwo(renderTarget) &&
+	                texture.minFilter !== NearestFilter &&
+	                texture.minFilter !== LinearFilter){
 
+	                var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
+	                var webglTexture = properties.get(texture).__webglTexture;
+
+	                state.bindTexture(target, webglTexture);
+	                _gl.generateMipmap(target);
+	                state.bindTexture(target, null);
+
+	            }
+
+	            var msaaSamples = getRenderTargetSamples(renderTarget);
+
+	            if(msaaSamples){
+
+	                var renderTargetProperties = properties.get(renderTarget);
+	                _gl.bindFramebuffer(_gl.READ_FRAMEBUFFER, renderTargetProperties.__webglMSAAFramebuffer);
+	                _gl.bindFramebuffer(_gl.DRAW_FRAMEBUFFER, renderTargetProperties.__webglFramebuffer);
+
+	                var width = renderTarget.width;
+	                var height = renderTarget.height;
+	                var mask = _gl.COLOR_BUFFER_BIT;
+	                if(renderTarget.depthBuffer) mask |= _gl.DEPTH_BUFFER_BIT;
+	                if(renderTarget.stencilBuffer) mask |= _gl.STENCIL_BUFFER_BIT;
+	                _gl.blitFramebuffer(0, 0, width, height, 0, 0, width, height, mask, _gl.NEAREST);
+
+	            }
 	        }
 
 		}
@@ -22707,6 +22782,34 @@
 		}
 
 	}
+
+	/**
+	 * @author Matt DesLauriers / @mattdesl
+	 */
+
+	function WebGLMultiRenderTarget( width, height, options ) {
+
+		WebGLRenderTarget.call( this, width, height, options );
+
+		this.attachments = [ this.texture ];
+	}
+
+	WebGLMultiRenderTarget.prototype = Object.create( WebGLRenderTarget.prototype );
+	WebGLMultiRenderTarget.prototype.constructor = WebGLMultiRenderTarget;
+
+	WebGLMultiRenderTarget.prototype.isWebGLMultiRenderTarget = true;
+
+	WebGLMultiRenderTarget.copy = function ( source ) {
+
+	WebGLRenderTarget.prototype.copy.call( this, source );
+
+		this.attachments = source.attachments.map(function ( attachment ) {
+			return attachment.clone();
+		});
+
+		return this;
+
+	};
 
 	/**
 	 * @author mrdoob / http://mrdoob.com/
@@ -43204,6 +43307,7 @@
 	exports.WebGLRenderTargetCube = WebGLRenderTargetCube;
 	exports.WebGLRenderTarget = WebGLRenderTarget;
 	exports.WebGLRenderer = WebGLRenderer;
+	exports.WebGLMultiRenderTarget = WebGLMultiRenderTarget;
 	exports.WebGLMultisampleRenderTarget = WebGLMultisampleRenderTarget;
 	exports.ShaderLib = ShaderLib;
 	exports.UniformsLib = UniformsLib;
