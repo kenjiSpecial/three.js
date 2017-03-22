@@ -870,18 +870,37 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, paramT
 
 		var texture = renderTarget.texture;
 
-		if ( texture.generateMipmaps && isPowerOfTwo( renderTarget ) &&
-				texture.minFilter !== NearestFilter &&
-				texture.minFilter !== LinearFilter ) {
+        if ( renderTarget.isWebGLMultiRenderTarget ) {
+            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
 
-			var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
-			var webglTexture = properties.get( texture ).__webglTexture;
+                texture = properties.get( renderTarget.attachments[ i ] ).__webglTexture;
 
-			state.bindTexture( target, webglTexture );
-			_gl.generateMipmap( target );
-			state.bindTexture( target, null );
+                if ( texture.generateMipmaps && isPowerOfTwo( renderTarget ) &&
+                    texture.minFilter !== NearestFilter &&
+                    texture.minFilter !== LinearFilter ) {
 
+                    state.bindTexture( target, texture );
+                    _gl.generateMipmap( target );
+
+                }
+
+            }
+        }else{
+            if ( texture.generateMipmaps && isPowerOfTwo( renderTarget ) &&
+                texture.minFilter !== NearestFilter &&
+                texture.minFilter !== LinearFilter ) {
+
+                var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
+                var webglTexture = properties.get( texture ).__webglTexture;
+
+                state.bindTexture( target, webglTexture );
+                _gl.generateMipmap( target );
+                state.bindTexture( target, null );
+
+            }
 		}
+
+
 
         var msaaSamples = getRenderTargetSamples( renderTarget );
 
@@ -899,6 +918,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, paramT
             _gl.blitFramebuffer( 0, 0, width, height, 0, 0, width, height, mask, _gl.NEAREST );
 
         }
+
 
 	}
 
