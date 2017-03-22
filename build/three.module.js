@@ -18520,12 +18520,27 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, paramT
                     var attachmentProperties = properties.get( attachment );
                     state.bindTexture( _gl.TEXTURE_2D, attachmentProperties.__webglTexture );
                     setTextureParameters( _gl.TEXTURE_2D, attachment, isTargetPowerOfTwo );
-                    setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer,
+
+                    // Setup storage for target texture and bind it to correct framebuffer
+                    function setupFrameBufferTexture2 ( framebuffer, width, height, texture, attachment, textureTarget ) {
+
+                        var glFormat = paramThreeToGL( texture.format );
+                        var glType = paramThreeToGL( texture.type );
+                        state.texImage2D( textureTarget, 0, glFormat, width, height, 0, glFormat, glType, null );
+                        _gl.bindFramebuffer( _gl.FRAMEBUFFER, framebuffer );
+                        _gl.framebufferTexture2D( _gl.FRAMEBUFFER, attachment, textureTarget, properties.get( texture ).__webglTexture, 0 );
+                        _gl.bindFramebuffer( _gl.FRAMEBUFFER, null );
+
+                    }
+
+                    setupFrameBufferTexture2( renderTargetProperties.__webglFramebuffer,
                         renderTarget.width,
                         renderTarget.height,
                         attachment,
                         _gl.COLOR_ATTACHMENT0 + i,
                         _gl.TEXTURE_2D );
+
+
 
                     if ( attachment.generateMipmaps && isTargetPowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
 
