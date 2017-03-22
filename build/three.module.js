@@ -20189,6 +20189,8 @@ function WebGLRenderer( parameters ) {
 	extensions.get( 'OES_texture_half_float_linear' );
 	extensions.get( 'OES_standard_derivatives' );
 	extensions.get( 'ANGLE_instanced_arrays' );
+	
+    var DrawBuffersEXT = extensions.get( 'WEBGL_draw_buffers' );
 
 	if ( extensions.get( 'OES_element_index_uint' ) ) {
 
@@ -22568,6 +22570,23 @@ function WebGLRenderer( parameters ) {
 			_gl.bindFramebuffer( _gl.FRAMEBUFFER, framebuffer );
 			_currentFramebuffer = framebuffer;
 
+            if ( DrawBuffersEXT ) {
+
+                if ( renderTargetProperties && renderTargetProperties.__webglAttachments ) {
+
+                    DrawBuffersEXT.drawBuffersWEBGL( renderTargetProperties.__webglAttachments );
+
+                } else if ( renderTarget ) {
+
+                    DrawBuffersEXT.drawBuffersWEBGL( defaultAttachments );
+
+                } else {
+
+                    DrawBuffersEXT.drawBuffersWEBGL( defaultBackAttachment );
+
+                }
+
+            }
 		}
 
 		state.scissor( _currentScissor );
