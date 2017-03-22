@@ -17848,6 +17848,17 @@
 
 			}
 
+	        if ( renderTarget && renderTarget.isWebGLMultiRenderTarget && renderTargetProperties.__webglAttachments ) {
+
+	            for ( var i = 0; i < renderTarget.attachments.length; i ++ ) {
+
+	                var attachmentProperties = properties.get( renderTarget.attachments[ i ] );
+	                _gl.deleteTexture( attachmentProperties.__webglTexture );
+
+	            }
+
+	        }
+
 			if ( renderTarget.isWebGLRenderTargetCube ) {
 
 				for ( var i = 0; i < 6; i ++ ) {
@@ -18568,6 +18579,7 @@
 	                    texture.minFilter !== NearestFilter &&
 	                    texture.minFilter !== LinearFilter ) {
 
+	                    var target = (renderTarget && renderTarget.isWebGLRenderTargetCube) ? _gl.TEXTURE_CUBE_MAP : _gl.TEXTURE_2D;
 	                    state.bindTexture( target, texture );
 	                    _gl.generateMipmap( target );
 
